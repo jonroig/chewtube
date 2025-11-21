@@ -57,6 +57,57 @@ export default function ChewTubePage() {
     setScriptsLoaded(true);
   };
 
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedVideoUrl = localStorage.getItem('chewtube_videoUrl');
+      const savedVideoId = localStorage.getItem('chewtube_videoId');
+      const savedSensitivity = localStorage.getItem('chewtube_sensitivity');
+      const savedDecayRate = localStorage.getItem('chewtube_decayRate');
+      const savedFuelPerBite = localStorage.getItem('chewtube_fuelPerBite');
+      const savedDebugMode = localStorage.getItem('chewtube_debugMode');
+
+      if (savedVideoUrl) setVideoUrl(savedVideoUrl);
+      if (savedVideoId) setVideoId(savedVideoId);
+      if (savedSensitivity) setSensitivity(parseInt(savedSensitivity));
+      if (savedDecayRate) setDecayRate(parseFloat(savedDecayRate));
+      if (savedFuelPerBite) setFuelPerBite(parseInt(savedFuelPerBite));
+      if (savedDebugMode !== null) setDebugMode(savedDebugMode === 'true');
+    } catch (err) {
+      console.error('Failed to load settings from localStorage:', err);
+    }
+  }, []);
+
+  // Save video URL and ID to localStorage whenever they change
+  useEffect(() => {
+    if (videoUrl) {
+      localStorage.setItem('chewtube_videoUrl', videoUrl);
+    }
+  }, [videoUrl]);
+
+  useEffect(() => {
+    if (videoId) {
+      localStorage.setItem('chewtube_videoId', videoId);
+    }
+  }, [videoId]);
+
+  // Save parent settings to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('chewtube_sensitivity', sensitivity.toString());
+  }, [sensitivity]);
+
+  useEffect(() => {
+    localStorage.setItem('chewtube_decayRate', decayRate.toString());
+  }, [decayRate]);
+
+  useEffect(() => {
+    localStorage.setItem('chewtube_fuelPerBite', fuelPerBite.toString());
+  }, [fuelPerBite]);
+
+  useEffect(() => {
+    localStorage.setItem('chewtube_debugMode', debugMode.toString());
+  }, [debugMode]);
+
   useEffect(() => {
     if (!scriptsLoaded) return;
 
