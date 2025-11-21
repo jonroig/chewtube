@@ -5,10 +5,9 @@ ChewTube is a Next.js web application that uses face detection to control video 
 ## Features
 
 - **Real-time Face Detection**: Uses MediaPipe Face Mesh for accurate mouth movement tracking
-- **Multiple Video Sources**: 
-  - YouTube videos (with direct URL input)
-  - Local video file mode
-  - Pre-selected safe YouTube videos
+- **YouTube Video Support**: 
+  - Direct YouTube URL input
+  - Pre-selected safe YouTube videos for quick access
 - **Adjustable Settings**:
   - Mouth sensitivity control
   - Playback duration per bite
@@ -23,7 +22,7 @@ ChewTube is a Next.js web application that uses face detection to control video 
 - **Styling**: Tailwind CSS
 - **Face Detection**: MediaPipe Face Mesh
 - **Icons**: Lucide React
-- **Video Player**: YouTube IFrame API / HTML5 Video
+- **Video Player**: YouTube IFrame API
 
 ## Prerequisites
 
@@ -69,12 +68,11 @@ npm start
 ## Usage
 
 1. **Grant Camera Permissions**: When prompted, allow the browser to access your webcam
-2. **Choose Video Source**:
-   - Click "YouTube" to use YouTube videos (paste any YouTube URL)
-   - Click "Local Video" to use the built-in sample video
+2. **Paste a YouTube URL**: Enter any YouTube video URL in the input field
 3. **Click "Start"** to begin monitoring
 4. **Start Eating!** Take a bite to fill the fuel tank and play the video
 5. **Adjust Settings**: Fine-tune sensitivity and playback duration in the Parent Settings panel
+6. **Quick Picks**: Choose from pre-selected safe videos if you need something fast
 
 ## How It Works
 
@@ -133,8 +131,8 @@ The app uses Next.js 14 with the App Router. Key features:
 
 **YouTube video won't play?**
 - Some videos have embedding restrictions
-- Try using "Local Video" mode as a fallback
-- The app will automatically switch to local mode if YouTube playback fails
+- Try a different video or use one of the pre-selected Quick Picks
+- Check the browser console for specific error messages
 
 **Face detection not working?**
 - Ensure good lighting

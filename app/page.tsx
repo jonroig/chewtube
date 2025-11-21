@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, AlertTriangle, Film, MonitorPlay, Youtube, Video } from 'lucide-react';
+import { Camera, AlertTriangle, Film, Youtube, Github } from 'lucide-react';
 import Script from 'next/script';
 
 const SAFE_PRESETS = [
@@ -10,8 +10,6 @@ const SAFE_PRESETS = [
   { name: "Nature 4K", id: "L_jWHffIx5E" }, 
   { name: "Lofi Girl (Live)", id: "jfKfPfyJRdk" }
 ];
-
-const LOCAL_VIDEO_URL = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 
 // Helper: Load Scripts Dynamically
 const loadScript = (src: string): Promise<void> => {
@@ -31,15 +29,15 @@ const loadScript = (src: string): Promise<void> => {
 
 export default function ChewTubePage() {
   const [isStarted, setIsStarted] = useState(false);
-  const [videoUrl, setVideoUrl] = useState('https://www.youtube.com/watch?v=aqz-KE-bpKQ'); 
-  const [videoId, setVideoId] = useState('aqz-KE-bpKQ');
+  const [videoUrl, setVideoUrl] = useState('https://www.youtube.com/watch?v=BvEKky9N1tQ'); 
+  const [videoId, setVideoId] = useState('BvEKky9N1tQ');
   const [status, setStatus] = useState<'waiting' | 'eating' | 'paused'>('waiting');
   const [fuel, setFuel] = useState(0);
   const [debugMode, setDebugMode] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [playerMode, setPlayerMode] = useState<'youtube' | 'local'>('local');
   const [videoError, setVideoError] = useState<string | null>(null);
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
+  const [showFAQ, setShowFAQ] = useState(false);
   
   // Configuration
   const [sensitivity, setSensitivity] = useState(5);
@@ -49,7 +47,6 @@ export default function ChewTubePage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const youtubePlayerRef = useRef<any>(null);
-  const localVideoRef = useRef<HTMLVideoElement>(null);
   const fuelRef = useRef(0);
   const lastMouthOpenRef = useRef(false);
   const cameraRef = useRef<any>(null);
@@ -64,17 +61,15 @@ export default function ChewTubePage() {
     if (!scriptsLoaded) return;
 
     window.onYouTubeIframeAPIReady = () => {
-      if (playerMode === 'youtube') createPlayer(videoId);
+      createPlayer(videoId);
     };
 
     const init = async () => {
       try {
-        if (playerMode === 'youtube') {
-          if (!window.YT) {
-            await loadScript('https://www.youtube.com/iframe_api');
-          } else {
-            createPlayer(videoId);
-          }
+        if (!window.YT) {
+          await loadScript('https://www.youtube.com/iframe_api');
+        } else {
+          createPlayer(videoId);
         }
         await initializeFaceMesh();
       } catch (err) {
@@ -92,13 +87,12 @@ export default function ChewTubePage() {
         try { youtubePlayerRef.current.destroy(); youtubePlayerRef.current = null; } catch(e) {}
       }
     };
-  }, [playerMode, scriptsLoaded]);
+  }, [scriptsLoaded]);
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
     setVideoUrl(url);
-    setVideoError(null); 
-    setPlayerMode('youtube');
+    setVideoError(null);
 
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
@@ -119,7 +113,6 @@ export default function ChewTubePage() {
   };
 
   const createPlayer = (id: string) => {
-    if (playerMode !== 'youtube') return;
     if (youtubePlayerRef.current) return;
 
     const rawOrigin = window.location.origin;
@@ -151,9 +144,7 @@ export default function ChewTubePage() {
             'onReady': onPlayerReady,
             'onError': (e: any) => {
               if (e.data === 150 || e.data === 101 || e.data === 153) {
-                setPlayerMode('local');
-                setVideoError("YouTube blocked playback. Switched to Safe Mode.");
-                setTimeout(() => setVideoError(null), 3000);
+                setVideoError("YouTube blocked playback. Try another video or contact support.");
               } else {
                 setVideoError(`Playback Error (${e.data}). Try another video.`);
               }
@@ -252,7 +243,6 @@ export default function ChewTubePage() {
       } else if (youtubePlayerRef.current && youtubePlayerRef.current.pauseVideo && youtubePlayerRef.current.getPlayerState) {
         if (youtubePlayerRef.current.getPlayerState() === 1) youtubePlayerRef.current.pauseVideo();
       }
-      if (localVideoRef.current) localVideoRef.current.pause();
     }
   }, [isStarted, useDirectIframe]);
 
@@ -266,35 +256,29 @@ export default function ChewTubePage() {
         setStatus('eating');
         
         if (!videoError) {
-          if (playerMode === 'youtube' && useDirectIframe && iframeRef.current) {
+          if (useDirectIframe && iframeRef.current) {
             iframeRef.current.contentWindow?.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-          } else if (playerMode === 'youtube' && youtubePlayerRef.current && youtubePlayerRef.current.playVideo) {
+          } else if (youtubePlayerRef.current && youtubePlayerRef.current.playVideo) {
             if (youtubePlayerRef.current.getPlayerState && youtubePlayerRef.current.getPlayerState() !== 1) {
               youtubePlayerRef.current.playVideo();
             }
-          }
-          if (playerMode === 'local' && localVideoRef.current) {
-            localVideoRef.current.play().catch(e => {});
           }
         }
       } else {
         setFuel(0);
         setStatus('paused');
         
-        if (playerMode === 'youtube' && useDirectIframe && iframeRef.current) {
+        if (useDirectIframe && iframeRef.current) {
           iframeRef.current.contentWindow?.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-        } else if (playerMode === 'youtube' && youtubePlayerRef.current && youtubePlayerRef.current.pauseVideo) {
+        } else if (youtubePlayerRef.current && youtubePlayerRef.current.pauseVideo) {
           if (youtubePlayerRef.current.getPlayerState && youtubePlayerRef.current.getPlayerState() === 1) {
             youtubePlayerRef.current.pauseVideo();
           }
         }
-        if (playerMode === 'local' && localVideoRef.current) {
-          localVideoRef.current.pause();
-        }
       }
     }, 100);
     return () => clearInterval(interval);
-  }, [isStarted, decayRate, videoError, playerMode, useDirectIframe]);
+  }, [isStarted, decayRate, videoError, useDirectIframe]);
 
   return (
     <>
@@ -324,18 +308,25 @@ export default function ChewTubePage() {
             <h1 className="text-2xl font-bold text-yellow-400 flex items-center gap-2">
               🍿 ChewTube
             </h1>
-            <p className="text-slate-400 text-sm">Video plays only while chewing is detected.</p>
+            <p className="text-slate-400 text-sm">
+              Eat to watch. Video plays only while chewing is detected.{' '}
+              <button 
+                onClick={() => setShowFAQ(true)} 
+                className="text-yellow-400 hover:text-yellow-300 underline transition-colors"
+              >
+                Why?
+              </button>
+            </p>
           </div>
           
           <div className="flex gap-2 w-full md:w-auto items-center">
             <div className="relative flex-1 min-w-[200px]">
               <input 
                 type="text" 
-                value={playerMode === 'youtube' ? videoUrl : 'Using Local Video File'}
+                value={videoUrl}
                 onChange={handleUrlChange}
-                disabled={playerMode === 'local'}
                 placeholder="Paste YouTube Link Here"
-                className="px-4 py-2 rounded bg-slate-700 border border-slate-600 w-full text-sm focus:outline-none focus:border-yellow-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white"
+                className="px-4 py-2 rounded bg-slate-700 border border-slate-600 w-full text-sm focus:outline-none focus:border-yellow-400 transition-colors text-white"
               />
             </div>
             <button 
@@ -354,10 +345,48 @@ export default function ChewTubePage() {
           </div>
         )}
 
+        {/* FAQ Modal */}
+        {showFAQ && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowFAQ(false)}>
+            <div className="bg-slate-800 rounded-xl p-6 max-w-2xl w-full border border-slate-700 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-2xl font-bold text-yellow-400">Why ChewTube?</h2>
+                <button 
+                  onClick={() => setShowFAQ(false)}
+                  className="text-slate-400 hover:text-white text-2xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="text-slate-300 space-y-4 leading-relaxed">
+                <p>
+                  Hi! I'm Jon... and I have a four year old named Zach. He loves to watch Let's Game It Out with his breakfast in the morning, but is so transfixed that he forgets to eat. Understandable.
+                </p>
+                <p>
+                  Like any good parent, I needed a technological solution to this screens problem.
+                </p>
+                <p>
+                  Enter <span className="text-yellow-400 font-semibold">ChewTube</span>. (The name came first.)
+                  </p>
+                  <p>Eat to watch. If you stop eating, the video stops.
+                </p>
+              </div>
+              <div className="mt-6 flex justify-end">
+                <button 
+                  onClick={() => setShowFAQ(false)}
+                  className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold rounded transition-colors"
+                >
+                  Got it!
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <main className="flex-1 flex flex-col lg:flex-row gap-6">
           {/* Left: Video Player Area */}
           <div className="flex-1 bg-black rounded-2xl overflow-hidden shadow-2xl relative aspect-video lg:aspect-auto flex flex-col justify-center group">
-            {playerMode === 'youtube' && useDirectIframe && (
+            {useDirectIframe && (
               <iframe
                 ref={iframeRef}
                 id="youtube-iframe-direct"
@@ -368,10 +397,7 @@ export default function ChewTubePage() {
                 allowFullScreen
               />
             )}
-            <div id="youtube-player" className={`w-full h-full absolute inset-0 ${playerMode === 'youtube' && !useDirectIframe ? 'block' : 'hidden'}`}></div>
-            {playerMode === 'local' && (
-              <video ref={localVideoRef} src={LOCAL_VIDEO_URL} className="w-full h-full absolute inset-0 object-contain bg-black" loop playsInline />
-            )}
+            <div id="youtube-player" className={`w-full h-full absolute inset-0 ${!useDirectIframe ? 'block' : 'hidden'}`}></div>
             {videoError && (
               <div className="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center z-30 p-6 text-center animate-in fade-in">
                 <AlertTriangle className="w-16 h-16 text-red-400 mb-4" />
@@ -401,24 +427,14 @@ export default function ChewTubePage() {
               <div className="mt-2 text-sm text-slate-400">Fuel Level: {Math.round(fuel)}%</div>
             </div>
 
-            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col gap-2">
-              <h3 className="font-bold text-slate-300 text-sm uppercase tracking-wider flex items-center gap-2"><MonitorPlay size={16} /> Player Source</h3>
+            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+              <h3 className="font-bold text-slate-300 mb-3 text-sm uppercase tracking-wider flex items-center gap-2"><Film size={16} /> Quick Picks (YouTube)</h3>
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => { setPlayerMode('youtube'); setVideoUrl('https://www.youtube.com/watch?v=aqz-KE-bpKQ'); }} className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-2 ${playerMode === 'youtube' ? 'bg-red-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}><Youtube size={14} /> YouTube</button>
-                <button onClick={() => setPlayerMode('local')} className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-2 ${playerMode === 'local' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}><Video size={14} /> Local Video</button>
+                {SAFE_PRESETS.map(preset => (
+                  <button key={preset.id} onClick={() => { loadVideoById(preset.id); setVideoUrl(`https://www.youtube.com/watch?v=${preset.id}`); }} className="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-medium transition-colors text-left truncate">{preset.name}</button>
+                ))}
               </div>
             </div>
-
-            {playerMode === 'youtube' && (
-              <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                <h3 className="font-bold text-slate-300 mb-3 text-sm uppercase tracking-wider flex items-center gap-2"><Film size={16} /> Quick Picks (YouTube)</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {SAFE_PRESETS.map(preset => (
-                    <button key={preset.id} onClick={() => { loadVideoById(preset.id); setVideoUrl(`https://www.youtube.com/watch?v=${preset.id}`); }} className="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-medium transition-colors text-left truncate">{preset.name}</button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <div className="relative bg-slate-800 rounded-xl overflow-hidden aspect-video border border-slate-700 group">
               <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover opacity-50" playsInline muted style={{ transform: 'scaleX(-1)' }} />
@@ -453,6 +469,17 @@ export default function ChewTubePage() {
             Made with 🌵 in Scottsdale, AZ.
             <br />
             Copyright 2025 <a href="https://jonroig.com" target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 transition-colors">Jon Roig</a>
+          </p>
+          <p className="mt-2">
+            <a 
+              href="https://github.com/jonroig/chewtube" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="inline-flex items-center gap-2 text-slate-400 hover:text-yellow-400 transition-colors"
+            >
+              <Github size={16} />
+              View on GitHub
+            </a>
           </p>
         </footer>
       </div>
