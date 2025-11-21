@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fix for camera mirroring */
+video {
+  transform: scaleX(-1);
+}
+
